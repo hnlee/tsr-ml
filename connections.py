@@ -32,5 +32,10 @@ def connect_to_twitter(yaml_path):
   auth.set_access_token(api_keys["twitter"]["access-token"], 
                         api_keys["twitter"]["access-secret"])
   api = tweepy.API(auth)
+
   return api
 
+def connect_to_facebook(yaml_path):
+  api_keys = load_yaml(yaml_path)
+
+  return api_keys["facebook"]["access-token"]
