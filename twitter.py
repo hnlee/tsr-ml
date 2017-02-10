@@ -1,21 +1,27 @@
 from tweepy import API, TweepError
 from time import time, sleep
 
-def create_id_screen_name_dict(id_list, api, window = 60 * 15):
-  id_screen_name_dict = {}
+def create_user_info_list(id_list, api, window = 60 * 15):
+  user_info_list = []
+  id_list = sorted(set(id_list))
   start = time()
   for idx, user_id in enumerate(id_list):
     if idx >= 900 and idx % 900 == 0:
       wait_for_next_window(start, api, window = window)
       start = time()
-    screen_name =  get_screen_name(user_id, api)
-    if screen_name:
-      id_screen_name_dict[user_id] = screen_name
-  return id_screen_name_dict
+    user_info = get_user_info(user_id, api)
+    if user_info:
+      user_info_list.append(user_info)
+  return user_info_list
 
-def get_screen_name(user_id, api, log = "log"):
+def get_user_info(user_id, api, log = "log"):
+  if not user_id:
+    return None
   try:
-    return api.get_user(user_id).screen_name
+    user = api.get_user(user_id)
+    return {"id": user_id,
+            "screen_name": user.screen_name,
+            "description": user.description}
   except TweepError as err:
     log_file = open(log, "a")
     log_file.write("{}: {!s}\n".format(err,

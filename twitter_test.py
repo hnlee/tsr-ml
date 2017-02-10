@@ -22,7 +22,10 @@ class MockAPI:
 
   def get_user(self, user_id):
     if user_id not in self.id_to_screen_name:
-      raise TweepError("Invalid id")
+      if user_id == 1234:
+        raise TweepError("Invalid id")
+      else:
+        return MockUser("ScreenName3")
     else:
       return self.id_to_screen_name[user_id]
 
@@ -41,67 +44,85 @@ class MockAPI:
 class MockUser:
   def __init__(self, screen_name):
     self.screen_name = screen_name
+    self.description = "Description"
 
-class TestCreateIdScreenNameDict(TestCase):
+class TestCreateUserInfoList(TestCase):
   def setUp(self):
     self.api = MockAPI()
 
   def test_empty_list(self):
     id_list = []
-    screen_names = create_id_screen_name_dict(id_list, self.api)
-    self.assertEquals(screen_names, {})
+    screen_names = create_user_info_list(id_list, self.api)
+    self.assertEquals(screen_names, [])
 
   def test_one_id_list(self):
     id_list = [123456789]
-    screen_names = create_id_screen_name_dict(id_list, self.api)
+    screen_names = create_user_info_list(id_list, self.api)
     self.assertEquals(screen_names,
-                      {123456789: "ScreenName1"})
+                      [{"id": 123456789,
+                        "screen_name": "ScreenName1",
+                        "description": "Description"}])
 
   def test_multiple_id_list(self):
     id_list = [123456789, 987654321]
-    screen_names = create_id_screen_name_dict(id_list, self.api)
+    screen_names = create_user_info_list(id_list, self.api)
     self.assertEquals(screen_names,
-                      {123456789: "ScreenName1",
-                       987654321: "ScreenName2"})
+                      [{"id": 123456789,
+                        "screen_name": "ScreenName1",
+                        "description": "Description"},
+                       {"id": 987654321,
+                        "screen_name": "ScreenName2",
+                        "description": "Description"}])
 
   def test_repeat_id_in_list(self):
     id_list = [123456789, 987654321, 123456789]
-    screen_names = create_id_screen_name_dict(id_list, self.api)
+    screen_names = create_user_info_list(id_list, self.api)
     self.assertEquals(screen_names,
-                      {123456789: "ScreenName1",
-                       987654321: "ScreenName2"})
+                      [{"id": 123456789,
+                        "screen_name": "ScreenName1",
+                        "description": "Description"},
+                       {"id": 987654321,
+                        "screen_name": "ScreenName2",
+                        "description": "Description"}])
 
   def test_invalid_id_in_list(self):
     id_list = [123456789, 987654321, 1234]
-    screen_names = create_id_screen_name_dict(id_list, self.api)
+    screen_names = create_user_info_list(id_list, self.api)
     self.assertEquals(screen_names,
-                      {123456789: "ScreenName1",
-                       987654321: "ScreenName2"})
+                      [{"id": 123456789,
+                        "screen_name": "ScreenName1",
+                        "description": "Description"},
+                       {"id": 987654321,
+                        "screen_name": "ScreenName2",
+                        "description": "Description"}])
 
   def test_more_than_900_requests_in_window(self):
-    id_list = [12345789 for n in range(901)]
+    id_list = range(123456789, 123456789 + 901)
     start = time()
-    screen_names = create_id_screen_name_dict(id_list, self.api, 1)
+    screen_names = create_user_info_list(id_list, self.api, 1)
     delay = round(time() - start, 1)
     self.assertEquals(delay, 1.0)
 
-class TestGetScreenName(TestCase):
+class TestGetUserInfo(TestCase):
   def setUp(self):
     self.api = MockAPI()
 
   def test_blank_id(self):
     user_id = None
-    screen_name = get_screen_name(user_id, self.api)
-    self.assertEquals(screen_name, None)
+    user_info = get_user_info(user_id, self.api)
+    self.assertEquals(user_info, None)
 
   def test_valid_id(self):
     user_id = 123456789
-    screen_name = get_screen_name(user_id, self.api)
-    self.assertEquals(screen_name, "ScreenName1")
+    user_info = get_user_info(user_id, self.api)
+    self.assertEquals(user_info,
+                      {"id": 123456789,
+                       "screen_name": "ScreenName1",
+                       "description": "Description"})
 
   def test_invalid_id(self):
     user_id = 1234
-    screen_name = get_screen_name(user_id, self.api)
+    user_info = get_user_info(user_id, self.api)
     log_file = open("log", "r")
     self.assertEquals("Invalid id: 1234\n", log_file.read())
     log_file.close()
